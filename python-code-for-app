@@ -1,0 +1,154 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import requests
+# Import your backend module
+# from cloudinary_engine import analyze_and_optimize
+
+# --- PAGE CONFIGURATION ---
+st.set_page_config(
+    page_title="EcoStream Analytics",
+    page_icon="🌱",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# --- SIDEBAR INPUTS ---
+st.sidebar.image("https://cloudinary.com", width=180)
+st.sidebar.markdown("## ⚙️ Simulation Controls")
+
+traffic = st.sidebar.slider(
+    "Estimated Monthly Page Views", 
+    min_value=1000, 
+    max_value=1000000, 
+    value=100000, 
+    step=10000,
+    help="The total number of times these assets are loaded by users per month."
+)
+
+carbon_intensity = st.sidebar.number_input(
+    "Regional Grid Carbon Intensity (g CO2e/kWh)",
+    min_value=10,
+    max_value=1000,
+    value=442,
+    help="Global average is ~442g. Clean grids like France are ~50g, coal-heavy grids are >700g."
+)
+
+# --- MOCK DATA FOR INITIALIZATION ---
+# Replace this mock function with your actual Cloudinary integration during the hackathon!
+def mock_analyze_and_optimize(url):
+    return {
+        "original_url": url,
+        "optimized_url": url, # In real life, append f_auto,q_auto
+        "original_size_mb": 2.4,
+        "optimized_size_mb": 0.38
+    }
+
+# --- MAIN INTERFACE ---
+st.title("🌱 EcoStream Analytics")
+st.caption("Quantifying the Environmental ROI of Cloudinary Media Optimization Pipelines")
+
+# Tabs for organization
+tab1, tab2 = st.tabs(["🎯 Single Asset Analyzer", "📁 Enterprise Batch Audit"])
+
+with tab1:
+    st.markdown("### 🖼️ Real-Time Asset Optimization Audit")
+    
+    input_url = st.text_input(
+        "Enter Raw Asset URL (JPG/PNG):", 
+        "https://wikimedia.org",
+        key="single_url"
+    )
+    
+    if st.button("Analyze Environmental Impact", type="primary"):
+        with st.spinner("Executing Cloudinary optimization matrices..."):
+            
+            # Switch to real function during hackathon: data = analyze_and_optimize(input_url)
+            data = mock_analyze_and_optimize(input_url)
+            
+            # --- ENVIRONMENTAL MATHEMATICAL MODEL ---
+            mb_saved_per_view = data["original_size_mb"] - data["optimized_size_mb"]
+            gb_saved_per_view = mb_saved_per_view / 1024
+            total_gb_saved_monthly = gb_saved_per_view * traffic
+            
+            # Energy formula: 1 GB transfer = 0.81 kWh
+            kwh_saved_monthly = total_gb_saved_monthly * 0.81
+            co2_saved_kg_monthly = (kwh_saved_monthly * carbon_intensity) / 1000
+            co2_saved_kg_annual = co2_saved_kg_monthly * 12
+            
+            # Equivalent environmental offsets
+            trees_planted = co2_saved_kg_annual / 22.0 # 1 mature tree absorbs ~22kg CO2/year
+            
+            # --- METRICS ROW ---
+            m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+            m_col1.metric("Weight Reduction", f"-{((mb_saved_per_view / data['original_size_mb']) * 100):.1f}%", delta="Optimized", delta_color="normal")
+            m_col2.metric("Monthly Data Saved", f"{total_gb_saved_monthly:.2f} GB")
+            m_col3.metric("Monthly CO2 Prevented", f"{co2_saved_kg_monthly:.2f} kg")
+            m_col4.metric("Equivalent Trees/Yr", f"{int(trees_planted)} 🌳")
+            
+            st.markdown("---")
+            
+            # --- VISUAL COMPARISON SIDE-BY-SIDE ---
+            vis_col1, vis_col2 = st.columns(2)
+            with vis_col1:
+                st.markdown("#### 🟥 Original Legacy Asset")
+                st.image(data["original_url"], use_container_width=True)
+                st.caption(f"Payload Size: **{data['original_size_mb']:.2f} MB**")
+            with vis_col2:
+                st.markdown("#### 🟩 Cloudinary Dynamic Transformation (`f_auto,q_auto`)")
+                st.image(data["optimized_url"], use_container_width=True)
+                st.caption(f"Payload Size: **{data['optimized_size_mb']:.2f} MB**")
+                
+            st.markdown("---")
+            
+            # --- PLOTLY ANALYTICS CHART ---
+            st.markdown("### 📈 Cumulative Carbon Offset Forecast (12 Months)")
+            months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            cumulative_co2 = [co2_saved_kg_monthly * i for i in range(1, 13)]
+            
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=months, 
+                y=cumulative_co2, 
+                mode='lines+markers',
+                line=dict(color='#10B981', width=3),
+                marker=dict(size=8),
+                name="CO2 Savings (kg)"
+            ))
+            
+            fig.update_layout(
+                title="Environmental Growth Trajectory",
+                xaxis_title="Timeline Month",
+                yaxis_title="Cumulative CO2 Saved (kg)",
+                template="plotly_dark",
+                margin=dict(l=40, r=40, t=40, b=40)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+with tab2:
+    st.markdown("### 📁 Enterprise Media Inventory Audit")
+    st.write("Simulate uploading an entire site manifest file (CSV) containing bulk image assets to batch compute organization-wide carbon reductions.")
+    
+    # Mock Batch Table DataFrame
+    batch_data = pd.DataFrame({
+        "Asset Filename": ["hero_banner.png", "product_grid_01.jpg", "footer_background.png", "promo_video_frame.png"],
+        "Original Weight (MB)": [4.2, 2.1, 1.8, 5.5],
+        "Cloudinary Weight (MB)": [0.65, 0.31, 0.22, 0.95],
+        "Status": ["Compressed", "Compressed", "Compressed", "Compressed"]
+    })
+    batch_data["Data Saved (MB)"] = batch_data["Original Weight (MB)"] - batch_data["Cloudinary Weight (MB)"]
+    batch_data["Efficiency Gain"] = (batch_data["Data Saved (MB)"] / batch_data["Original Weight (MB)"] * 100).round(1).astype(str) + "%"
+    
+    st.dataframe(batch_data, use_container_width=True)
+    
+    # Batch mini-chart
+    fig_bar = px.bar(
+        batch_data, 
+        x="Asset Filename", 
+        y=["Original Weight (MB)", "Cloudinary Weight (MB)"],
+        barmode="group",
+        title="Payload Delta Across Enterprise Directory Assets",
+        color_discrete_sequence=["#EF4444", "#10B981"]
+    )
+    st.plotly_chart(fig_bar, use_container_width=True)
